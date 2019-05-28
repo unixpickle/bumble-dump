@@ -6,7 +6,7 @@ for profile_name in os.listdir('profiles'):
     with open(os.path.join('profiles', profile_name), 'r') as f:
         data = json.load(f)
     for album in data['albums']:
-        if not 'photos' in album:
+        if 'photos' not in album:
             continue
         for photo in album['photos']:
             img_path = os.path.join('photos/' + photo['id'] + '.jpg')
