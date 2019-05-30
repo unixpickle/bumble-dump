@@ -1,6 +1,10 @@
+import io
 import json
 import os
 import subprocess
+import sys
+
+from PIL import Image
 
 profs = os.listdir('profiles')
 for i in range(100):
@@ -19,5 +23,9 @@ for i in range(100):
             print(photo['id'])
             img_url = 'https:' + photo['large_url']
             data = subprocess.check_output(['curl', img_url], stderr=subprocess.DEVNULL)
-            with open(img_path, 'wb+') as f:
-                f.write(data)
+            try:
+                img = Image.open(io.BytesIO(data))
+                img.thumbnail(512)
+                img.save(img_path)
+            except:  # noqa
+                sys.stderr.write('failed for %s\n', photo['id'])
