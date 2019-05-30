@@ -25,7 +25,7 @@ for i in range(100):
             data = subprocess.check_output(['curl', img_url], stderr=subprocess.DEVNULL)
             try:
                 img = Image.open(io.BytesIO(data))
-                img.thumbnail(512)
+                img.thumbnail([512, 512])
                 img.save(img_path)
             except:  # noqa
                 sys.stderr.write('failed for %s\n', photo['id'])
