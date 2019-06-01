@@ -28,4 +28,4 @@ for i in range(100):
                 img.thumbnail([512, 512])
                 img.save(img_path)
             except:  # noqa
-                sys.stderr.write('failed for %s\n', photo['id'])
+                sys.stderr.write('failed for %s\n' % photo['id'])
