@@ -25,6 +25,7 @@ func (b *BumbleCall) recreate() (*http.Request, error) {
 	for k, v := range b.Headers {
 		req.Header.Add(k, v)
 	}
+	req.Header.Del("Accept-Encoding")
 	return req, nil
 }
 
