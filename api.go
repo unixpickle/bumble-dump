@@ -208,3 +208,31 @@ func (b *BumbleAPI) GetEncounters() ([]*User, error) {
 	}
 	return users, nil
 }
+
+// Dislike dislikes a user by their ID.
+func (b *BumbleAPI) Dislike(userID string) error {
+	if err := b.doRequest(b.DislikeCall.Request(userID)); err != nil {
+		return errors.Wrap(err, "dislike")
+	}
+	return nil
+}
+
+// UpdateLocation updates the user's location.
+func (b *BumbleAPI) UpdateLocation(lat, lon float64) error {
+	if err := b.doRequest(b.UpdateLocationCall.Request(lat, lon)); err != nil {
+		return errors.Wrap(err, "update location")
+	}
+	return nil
+}
+
+func (b *BumbleAPI) doRequest(req *http.Request, err error) error {
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
+}
