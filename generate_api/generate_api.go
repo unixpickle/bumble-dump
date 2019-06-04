@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"os"
 
+	bumble "github.com/unixpickle/bumble-dump"
 	"github.com/unixpickle/essentials"
 )
 
@@ -27,7 +28,7 @@ type Request struct {
 	Method   string    `json:"method"`
 	URL      string    `json:"url"`
 	Headers  []*Header `json:"headers"`
-	PostData *PostData `json:"postData"`
+	PostData PostData  `json:"postData"`
 }
 
 type Header struct {
@@ -41,8 +42,34 @@ type PostData struct {
 }
 
 func main() {
-	var obj *HAR
+	var obj HAR
 	essentials.Must(json.NewDecoder(os.Stdin).Decode(&obj))
 
-	// TODO: extract APIs here.
+	var api bumble.BumbleAPI
+	var foundLoc, foundGetEnc, foundDislike bool
+	for _, entry := range obj.Log.Entries {
+		call := bumble.BumbleCall{
+			URL:      entry.Request.URL,
+			Headers:  map[string]string{},
+			PostBody: entry.Request.PostData.Text,
+		}
+		for _, header := range entry.Request.Headers {
+			call.Headers[header.Name] = header.Value
+		}
+		if call.URL == "https://bumble.com/unified-api.phtml?SERVER_UPDATE_LOCATION" {
+			api.UpdateLocationCall = bumble.UpdateLocationCall{BumbleCall: call}
+			foundLoc = true
+		} else if call.URL == "https://bumble.com/unified-api.phtml?SERVER_GET_ENCOUNTERS" {
+			api.GetEncountersCall = bumble.GetEncountersCall{BumbleCall: call}
+			foundGetEnc = true
+		} else if call.URL == "https://bumble.com/unified-api.phtml?SERVER_ENCOUNTERS_VOTE" {
+			api.DislikeCall = bumble.DislikeCall{BumbleCall: call}
+			foundDislike = true
+		}
+	}
+	if !foundLoc || !foundGetEnc || !foundDislike {
+		essentials.Die("missing a request (did you remember to swipe someone?)")
+	}
+
+	json.NewEncoder(os.Stdout).Encode(api)
 }
