@@ -47,6 +47,9 @@ func removeDuplicates(coll *mongo.Collection) {
 			}
 			ids[obj.ID] = append(ids[obj.ID], obj.RealID)
 		}
+		if !res.Next(context.Background()) {
+			break
+		}
 	}
 	log.Println("removing duplicates...")
 	numRemoved := 0
