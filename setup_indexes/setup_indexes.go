@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"io"
 	"log"
 	"time"
 
@@ -37,19 +36,12 @@ func removeDuplicates(coll *mongo.Collection) {
 	res, err := coll.Find(context.Background(), bson.D{}, nil)
 	essentials.Must(err)
 	ids := map[string][]interface{}{}
-	for {
+	for res.Next(context.Background()) {
 		var obj map[string]interface{}
 		if err := res.Decode(&obj); err != nil {
-			if err == mongo.ErrNoDocuments || err == io.EOF {
-				break
-			}
 			log.Fatal(err)
-		} else {
-			ids[obj["id"].(string)] = append(ids[obj["id"].(string)], obj["_id"])
 		}
-		if !res.Next(context.Background()) {
-			break
-		}
+		ids[obj["id"].(string)] = append(ids[obj["id"].(string)], obj["_id"])
 	}
 	log.Println("removing duplicates...")
 	numRemoved := 0
