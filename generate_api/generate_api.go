@@ -9,6 +9,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strings"
 
 	bumble "github.com/unixpickle/bumble-dump"
 	"github.com/unixpickle/essentials"
@@ -56,13 +57,13 @@ func main() {
 		for _, header := range entry.Request.Headers {
 			call.Headers[header.Name] = header.Value
 		}
-		if call.URL == "https://bumble.com/unified-api.phtml?SERVER_UPDATE_LOCATION" {
+		if strings.Contains(call.URL, "unified-api.phtml?SERVER_UPDATE_LOCATION") {
 			api.UpdateLocationCall = bumble.UpdateLocationCall{BumbleCall: call}
 			foundLoc = true
-		} else if call.URL == "https://bumble.com/unified-api.phtml?SERVER_GET_ENCOUNTERS" {
+		} else if strings.Contains(call.URL, "unified-api.phtml?SERVER_GET_ENCOUNTERS") {
 			api.GetEncountersCall = bumble.GetEncountersCall{BumbleCall: call}
 			foundGetEnc = true
-		} else if call.URL == "https://bumble.com/unified-api.phtml?SERVER_ENCOUNTERS_VOTE" {
+		} else if strings.Contains(call.URL, "unified-api.phtml?SERVER_ENCOUNTERS_VOTE") {
 			api.DislikeCall = bumble.DislikeCall{BumbleCall: call}
 			foundDislike = true
 		}

@@ -49,7 +49,8 @@ func OpenDatabase(c *Config) (Database, error) {
 }
 
 func (m *mongoDatabase) AddUser(u *User) error {
-	_, err := m.profiles.InsertOne(context.Background(), u)
+	err := m.profiles.FindOneAndReplace(context.Background(), bson.D{{Key: "id", Value: u.ID}},
+		u, options.FindOneAndReplace().SetUpsert(true)).Err()
 	if err != nil {
 		return errors.Wrap(err, "add user")
 	}
@@ -66,7 +67,7 @@ func (m *mongoDatabase) GetUser(userID string) (*User, error) {
 }
 
 func (m *mongoDatabase) PhotoExists(id string) (bool, error) {
-	_, err := m.photos.FindOne(context.Background(), bson.D{{Key: "id", Value: id}}).DecodeBytes()
+	err := m.photos.FindOne(context.Background(), bson.D{{Key: "id", Value: id}}).Err()
 	if err == mongo.ErrNoDocuments {
 		return false, nil
 	} else if err == nil {
@@ -94,7 +95,8 @@ func (m *mongoDatabase) AddPhoto(photo *Photo, data []byte) error {
 		return errors.Wrap(err, "add photo")
 	}
 
-	_, err = m.photos.InsertOne(context.Background(), photo)
+	err = m.photos.FindOneAndReplace(context.Background(), bson.D{{Key: "id", Value: photo.ID}},
+		photo, options.FindOneAndReplace().SetUpsert(true)).Err()
 	if err != nil {
 		os.Remove(newPath)
 		return errors.Wrap(err, "add photo")

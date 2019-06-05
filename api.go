@@ -98,6 +98,10 @@ func (b *BumbleAPI) GetEncounters() ([]*User, error) {
 
 	var responseObj struct {
 		Body []struct {
+			ServerErrorMessage *struct {
+				ErrorMessage string `json:"error_message"`
+			} `json:"server_error_message"`
+
 			ClientEncounters struct {
 				Results []struct {
 					User struct {
@@ -160,6 +164,9 @@ func (b *BumbleAPI) GetEncounters() ([]*User, error) {
 
 	var users []*User
 	for _, body := range responseObj.Body {
+		if body.ServerErrorMessage != nil {
+			return nil, errors.New(body.ServerErrorMessage.ErrorMessage)
+		}
 		for _, result := range body.ClientEncounters.Results {
 			rawUser := result.User
 			user := User{
