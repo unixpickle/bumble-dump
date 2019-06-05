@@ -49,7 +49,7 @@ SearchLoop:
 				continue
 			}
 			if len(users) == 0 {
-				log.Print("scan: got 0 results")
+				log.Printf("scan: got 0 results after %d", numResults)
 				continue SearchLoop
 			}
 			for _, user := range users {
@@ -62,6 +62,7 @@ SearchLoop:
 				numResults += 1
 			}
 		}
+		log.Printf("scan: got %d total results", numResults)
 	}
 }
 
