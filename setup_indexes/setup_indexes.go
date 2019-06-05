@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"time"
 
@@ -39,7 +40,7 @@ func removeDuplicates(coll *mongo.Collection) {
 	for {
 		var obj map[string]interface{}
 		if err := res.Decode(&obj); err != nil {
-			if err == mongo.ErrNoDocuments {
+			if err == mongo.ErrNoDocuments || err == io.EOF {
 				break
 			}
 			log.Fatal(err)
