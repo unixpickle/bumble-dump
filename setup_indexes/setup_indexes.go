@@ -37,15 +37,14 @@ func removeDuplicates(coll *mongo.Collection) {
 	essentials.Must(err)
 	ids := map[string][]interface{}{}
 	for {
-		var obj struct {
-			RealID interface{} `bson:"_id"`
-			ID     string      `bson:"id"`
-		}
+		var obj map[string]interface{}
 		if err := res.Decode(&obj); err != nil {
 			if err == mongo.ErrNoDocuments {
 				break
 			}
-			ids[obj.ID] = append(ids[obj.ID], obj.RealID)
+			log.Fatal(err)
+		} else {
+			ids[obj["id"].(string)] = append(ids[obj["id"].(string)], obj["_id"])
 		}
 		if !res.Next(context.Background()) {
 			break
@@ -65,8 +64,11 @@ func removeDuplicates(coll *mongo.Collection) {
 }
 
 func createUniqueID(coll *mongo.Collection) {
-	coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	_, err := coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys:    bson.D{{Key: "id", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	}, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
