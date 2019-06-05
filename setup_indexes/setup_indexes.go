@@ -32,6 +32,7 @@ func main() {
 }
 
 func removeDuplicates(coll *mongo.Collection) {
+	log.Println("scanning table...")
 	res, err := coll.Find(context.Background(), bson.D{}, nil)
 	essentials.Must(err)
 	ids := map[string][]interface{}{}
@@ -47,6 +48,7 @@ func removeDuplicates(coll *mongo.Collection) {
 			ids[obj.ID] = append(ids[obj.ID], obj.RealID)
 		}
 	}
+	log.Println("removing duplicates...")
 	numRemoved := 0
 	for _, uids := range ids {
 		if len(uids) > 1 {
