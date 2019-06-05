@@ -9,7 +9,7 @@ import (
 )
 
 type Photo struct {
-	ID         string
+	ID         string `bson:"id"`
 	PreviewURL string
 	LargeURL   string
 
@@ -23,33 +23,33 @@ type Photo struct {
 }
 
 type Album struct {
-	UID     string
+	UID     string `bson:"uid"`
 	Name    string
 	Caption string
 	Photos  []*Photo
 }
 
 type MusicArtist struct {
-	ID   string
+	ID   string `bson:"id"`
 	Name string
 }
 
 type MusicService struct {
-	ID          string
+	ID          string `bson:"id"`
 	DisplayName string
 	Type        int
 	TopArtists  []*MusicArtist
 }
 
 type ProfileField struct {
-	ID           string
+	ID           string `bson:"id"`
 	Type         int
 	Name         string
 	DisplayValue string
 }
 
 type User struct {
-	ID            string
+	ID            string `bson:"id"`
 	Name          string
 	Age           int
 	Gender        int

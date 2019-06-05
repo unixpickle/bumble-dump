@@ -2,6 +2,9 @@ package bumble
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -16,8 +19,8 @@ type Database interface {
 	GetUser(userID string) (*User, error)
 
 	PhotoExists(id string) (bool, error)
-	AddPhoto(id string, data []byte) error
-	GetPhoto(id string) ([]byte, error)
+	AddPhoto(id string, photo *Photo, data []byte) error
+	GetPhoto(id string) (*Photo, []byte, error)
 }
 
 type mongoDatabase struct {
@@ -46,13 +49,20 @@ func OpenDatabase(c *Config) (Database, error) {
 }
 
 func (m *mongoDatabase) AddUser(u *User) error {
-	// TODO: this.
-	return errors.New("not yet implemented")
+	_, err := m.profiles.InsertOne(context.Background(), u)
+	if err != nil {
+		return errors.Wrap(err, "add user")
+	}
+	return nil
 }
 
 func (m *mongoDatabase) GetUser(userID string) (*User, error) {
-	// TODO: this.
-	return nil, errors.New("not yet implemented")
+	var user User
+	res := m.photos.FindOne(context.Background(), bson.D{{Key: "id", Value: userID}})
+	if err := res.Decode(&user); err != nil {
+		return nil, errors.Wrap(err, "get user")
+	}
+	return &user, nil
 }
 
 func (m *mongoDatabase) PhotoExists(id string) (bool, error) {
@@ -65,12 +75,43 @@ func (m *mongoDatabase) PhotoExists(id string) (bool, error) {
 	return false, errors.Wrap(err, "check photo exists")
 }
 
-func (m *mongoDatabase) AddPhoto(id string, data []byte) error {
-	// TODO: this.
+func (m *mongoDatabase) AddPhoto(id string, photo *Photo, data []byte) error {
+	tmpFile, err := ioutil.TempFile("", "")
+	if err != nil {
+		return errors.Wrap(err, "add photo")
+	}
+
+	_, err = tmpFile.Write(data)
+	tmpFile.Close()
+	if err != nil {
+		os.Remove(tmpFile.Name())
+		return errors.Wrap(err, "add photo")
+	}
+
+	newPath := filepath.Join(m.config.ImagesPath, id+".jpg")
+	if err := os.Rename(tmpFile.Name(), newPath); err != nil {
+		os.Remove(tmpFile.Name())
+		return errors.Wrap(err, "add photo")
+	}
+
+	_, err = m.photos.InsertOne(context.Background(), photo)
+	if err != nil {
+		os.Remove(newPath)
+		return errors.Wrap(err, "add photo")
+	}
+
 	return nil
 }
 
-func (m *mongoDatabase) GetPhoto(id string) ([]byte, error) {
-	// TODO: this.
-	return nil, nil
+func (m *mongoDatabase) GetPhoto(id string) (*Photo, []byte, error) {
+	var photo Photo
+	res := m.photos.FindOne(context.Background(), bson.D{{Key: "id", Value: id}})
+	if err := res.Decode(&photo); err != nil {
+		return nil, nil, errors.Wrap(err, "get photo")
+	}
+	data, err := ioutil.ReadFile(filepath.Join(m.config.ImagesPath, id+".jpg"))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "get photo")
+	}
+	return &photo, data, nil
 }
