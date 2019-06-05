@@ -20,6 +20,8 @@ func main() {
 		essentials.Die("Usage: scan <api.json>")
 	}
 
+	rand.Seed(time.Now().UnixNano())
+
 	var api bumble.BumbleAPI
 	f, err := os.Open(os.Args[1])
 	essentials.Must(err)
