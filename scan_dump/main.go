@@ -10,6 +10,7 @@ import (
 	_ "image/gif"
 	"image/jpeg"
 	_ "image/png"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -46,6 +47,10 @@ func main() {
 	for {
 		var user bumble.User
 		if err := dec.Decode(&user); err != nil {
+			if errors.Cause(err) == io.EOF {
+				log.Println("scan_dump: read EOF")
+				return
+			}
 			log.Fatalln("scan_dump:", err)
 		}
 		db.AddUser(&user)
