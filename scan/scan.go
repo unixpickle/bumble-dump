@@ -32,9 +32,9 @@ func main() {
 SearchLoop:
 	for {
 		lat, lon := randomLocation()
-		log.Printf("searching at location: %f,%f", lat, lon)
+		log.Printf("scan: searching at location: %f,%f", lat, lon)
 		if err := api.UpdateLocation(lat, lon); err != nil {
-			log.Print(err)
+			log.Println("scan:", err)
 			time.Sleep(ErrBackoff)
 			continue
 		}
@@ -43,17 +43,17 @@ SearchLoop:
 		for numResults < 1000 {
 			users, err := api.GetEncounters()
 			if err != nil {
-				log.Print(err)
+				log.Println("scan:", err)
 				continue
 			}
 			if len(users) == 0 {
-				log.Print("got 0 results")
+				log.Print("scan: got 0 results")
 				continue SearchLoop
 			}
 			for _, user := range users {
 				enc.Encode(user)
 				if err := api.Dislike(user.ID); err != nil {
-					log.Print(err)
+					log.Println("scan:", err)
 					time.Sleep(ErrBackoff)
 					continue SearchLoop
 				}

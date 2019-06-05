@@ -19,7 +19,7 @@ type Database interface {
 	GetUser(userID string) (*User, error)
 
 	PhotoExists(id string) (bool, error)
-	AddPhoto(id string, photo *Photo, data []byte) error
+	AddPhoto(photo *Photo, data []byte) error
 	GetPhoto(id string) (*Photo, []byte, error)
 }
 
@@ -75,7 +75,7 @@ func (m *mongoDatabase) PhotoExists(id string) (bool, error) {
 	return false, errors.Wrap(err, "check photo exists")
 }
 
-func (m *mongoDatabase) AddPhoto(id string, photo *Photo, data []byte) error {
+func (m *mongoDatabase) AddPhoto(photo *Photo, data []byte) error {
 	tmpFile, err := ioutil.TempFile("", "")
 	if err != nil {
 		return errors.Wrap(err, "add photo")
@@ -88,7 +88,7 @@ func (m *mongoDatabase) AddPhoto(id string, photo *Photo, data []byte) error {
 		return errors.Wrap(err, "add photo")
 	}
 
-	newPath := filepath.Join(m.config.PhotosPath, id+".jpg")
+	newPath := filepath.Join(m.config.PhotosPath, photo.ID+".jpg")
 	if err := os.Rename(tmpFile.Name(), newPath); err != nil {
 		os.Remove(tmpFile.Name())
 		return errors.Wrap(err, "add photo")

@@ -63,6 +63,16 @@ type User struct {
 	ScanDate time.Time
 }
 
+func (u *User) AllPhotos() []*Photo {
+	var res []*Photo
+	for _, album := range u.Albums {
+		for _, ph := range album.Photos {
+			res = append(res, ph)
+		}
+	}
+	return res
+}
+
 // BumbleAPI encapsulates all the required bumble calls to
 // scan profiles.
 type BumbleAPI struct {
