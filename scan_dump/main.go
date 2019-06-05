@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/nfnt/resize"
 	"github.com/pkg/errors"
@@ -33,9 +34,13 @@ func main() {
 	}
 
 	photoChan := make(chan *bumble.Photo, 16)
+	photoWg := sync.WaitGroup{}
 	for i := 0; i < NumPhotoWorkers; i++ {
-		go photoDownloader(db, photoChan)
+		photoWg.Add(1)
+		go photoDownloader(db, photoChan, &photoWg)
 	}
+	defer photoWg.Wait()
+	defer close(photoChan)
 
 	dec := json.NewDecoder(os.Stdin)
 	for {
@@ -54,7 +59,8 @@ func main() {
 	}
 }
 
-func photoDownloader(db bumble.Database, ch <-chan *bumble.Photo) {
+func photoDownloader(db bumble.Database, ch <-chan *bumble.Photo, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for photo := range ch {
 		resp, err := http.Get("https:" + photo.LargeURL)
 		if err != nil {
