@@ -7,4 +7,4 @@ This is a comprehensive set of tools for dumping Bumble dating profiles into a d
 The configuration is specified via a few environment variables. Here are the variables:
 
  * `BUMBLE_DB`: a MongoDB database URI. **Default:** `mongodb://localhost:27017`.
- * `BUMBLE_IMAGES`: the directory path for storing profile images. **Default:** `./photos`.
+ * `BUMBLE_PHOTOS`: the directory path for storing profile photos. **Default:** `./photos`.

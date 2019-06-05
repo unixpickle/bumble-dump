@@ -88,7 +88,7 @@ func (m *mongoDatabase) AddPhoto(id string, photo *Photo, data []byte) error {
 		return errors.Wrap(err, "add photo")
 	}
 
-	newPath := filepath.Join(m.config.ImagesPath, id+".jpg")
+	newPath := filepath.Join(m.config.PhotosPath, id+".jpg")
 	if err := os.Rename(tmpFile.Name(), newPath); err != nil {
 		os.Remove(tmpFile.Name())
 		return errors.Wrap(err, "add photo")
@@ -109,7 +109,7 @@ func (m *mongoDatabase) GetPhoto(id string) (*Photo, []byte, error) {
 	if err := res.Decode(&photo); err != nil {
 		return nil, nil, errors.Wrap(err, "get photo")
 	}
-	data, err := ioutil.ReadFile(filepath.Join(m.config.ImagesPath, id+".jpg"))
+	data, err := ioutil.ReadFile(filepath.Join(m.config.PhotosPath, id+".jpg"))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "get photo")
 	}

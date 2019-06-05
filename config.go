@@ -5,7 +5,7 @@ import "os"
 // Config contains the data storage configuration.
 type Config struct {
 	DatabaseURI string
-	ImagesPath  string
+	PhotosPath  string
 }
 
 // GetConfig gets the configuration from the environment,
@@ -13,7 +13,7 @@ type Config struct {
 func GetConfig() *Config {
 	return &Config{
 		DatabaseURI: getDatabaseURI(),
-		ImagesPath:  getImagesPath(),
+		PhotosPath:  getPhotosPath(),
 	}
 }
 
@@ -25,8 +25,8 @@ func getDatabaseURI() string {
 	return "mongodb://localhost:27017"
 }
 
-func getImagesPath() string {
-	res := os.Getenv("BUMBLE_IMAGES")
+func getPhotosPath() string {
+	res := os.Getenv("BUMBLE_PHOTOS")
 	if res != "" {
 		return res
 	}
