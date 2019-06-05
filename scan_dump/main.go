@@ -56,7 +56,7 @@ func main() {
 
 func photoDownloader(db bumble.Database, ch <-chan *bumble.Photo) {
 	for photo := range ch {
-		resp, err := http.Get(photo.LargeURL)
+		resp, err := http.Get("https:" + photo.LargeURL)
 		if err != nil {
 			log.Println("scan_dump:", err)
 			continue
