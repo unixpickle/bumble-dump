@@ -37,7 +37,7 @@ func printTopCorrelations(m map[string]float64) {
 	essentials.VoodooSort(corr, func(i, j int) bool {
 		return corr[i] < corr[j]
 	}, words)
-	for i := 0; i < 20; i++ {
+	for i := len(corr) - 1; i >= len(corr)-20; i-- {
 		fmt.Println(words[i], corr[i])
 	}
 }
