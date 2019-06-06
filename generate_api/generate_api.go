@@ -69,7 +69,8 @@ func main() {
 		}
 	}
 	if !foundLoc || !foundGetEnc || !foundDislike {
-		essentials.Die("missing a request (did you remember to swipe someone?)")
+		essentials.Die("missing a request (did you remember to swipe someone?)",
+			foundLoc, foundGetEnc, foundDislike)
 	}
 
 	json.NewEncoder(os.Stdout).Encode(api)
