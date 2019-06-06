@@ -4,6 +4,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/unixpickle/bumble-dump"
 	"github.com/unixpickle/essentials"
@@ -14,6 +16,7 @@ func main() {
 	essentials.Must(err)
 
 	doOver40(db)
+	doOverSixFoot(db)
 	doZodiacSigns(db)
 }
 
@@ -22,6 +25,23 @@ func doOver40(db bumble.Database) {
 	correlations, err := bumble.WordCorrelations(context.Background(), db,
 		func(u *bumble.User) bool {
 			return u.Age >= 40
+		})
+	essentials.Must(err)
+	printTopCorrelations(correlations)
+}
+
+func doOverSixFoot(db bumble.Database) {
+	fmt.Println("Height > 6ft correlations:")
+	correlations, err := bumble.WordCorrelations(context.Background(), db,
+		func(u *bumble.User) bool {
+			for _, field := range u.ProfileFields {
+				if field.ID == "lifestyle_height" {
+					height := strings.Fields(strings.Split(field.DisplayValue, "(")[1])[0]
+					heightCm, _ := strconv.Atoi(height)
+					return heightCm >= 183
+				}
+			}
+			return false
 		})
 	essentials.Must(err)
 	printTopCorrelations(correlations)
@@ -59,6 +79,7 @@ func printTopCorrelations(m map[string]float64, ignore ...string) {
 			count++
 		}
 	}
+	fmt.Println()
 }
 
 type correlationPair struct {
