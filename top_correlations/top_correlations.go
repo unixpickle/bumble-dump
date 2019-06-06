@@ -13,7 +13,18 @@ func main() {
 	db, err := bumble.OpenDatabase(bumble.GetConfig())
 	essentials.Must(err)
 
+	doOver40(db)
 	doZodiacSigns(db)
+}
+
+func doOver40(db bumble.Database) {
+	fmt.Println("Age > 40 correlations:")
+	correlations, err := bumble.WordCorrelations(context.Background(), db,
+		func(u *bumble.User) bool {
+			return u.Age >= 40
+		})
+	essentials.Must(err)
+	printTopCorrelations(correlations)
 }
 
 func doZodiacSigns(db bumble.Database) {
