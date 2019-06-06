@@ -23,11 +23,11 @@ func doZodiacSigns(db bumble.Database) {
 		"capricorn aquarius pisces")
 	correlations, err := bumble.WordCorrelations(context.Background(), db,
 		func(u *bumble.User) bool {
-			for _, field := range u.ProfileFields {
-				if field.ID == "lifestyle_zodiak" {
-					return true
-				}
-			}
+			// for _, field := range u.ProfileFields {
+			// 	if field.ID == "lifestyle_zodiak" {
+			// 		return true
+			// 	}
+			// }
 			words := bumble.WordsInBio(u)
 			for _, w := range signs {
 				if words[w] > 0 {
@@ -37,10 +37,10 @@ func doZodiacSigns(db bumble.Database) {
 			return false
 		})
 	essentials.Must(err)
-	printTopCorrelations(correlations)
+	printTopCorrelations(correlations, signs)
 }
 
-func printTopCorrelations(m map[string]float64) {
+func printTopCorrelations(m map[string]float64, ignore []string) {
 	var words []string
 	var corr []float64
 	for w, c := range m {
@@ -50,8 +50,12 @@ func printTopCorrelations(m map[string]float64) {
 	essentials.VoodooSort(corr, func(i, j int) bool {
 		return corr[i] < corr[j]
 	}, words)
-	for i := len(corr) - 1; i >= len(corr)-20; i-- {
-		fmt.Println(words[i], corr[i])
+	count := 0
+	for i := len(corr) - 1; i >= 0 && count < 20; i-- {
+		if !essentials.Contains(ignore, words[i]) {
+			fmt.Println(words[i], corr[i])
+			count++
+		}
 	}
 }
 
