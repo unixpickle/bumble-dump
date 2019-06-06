@@ -17,6 +17,7 @@ import (
 type Database interface {
 	AddUser(u *User) error
 	GetUser(userID string) (*User, error)
+	AllUsers(ctx context.Context) (<-chan *User, <-chan error)
 
 	PhotoExists(id string) (bool, error)
 	AddPhoto(photo *Photo, data []byte) error
@@ -64,6 +65,41 @@ func (m *mongoDatabase) GetUser(userID string) (*User, error) {
 		return nil, errors.Wrap(err, "get user")
 	}
 	return &user, nil
+}
+
+func (m *mongoDatabase) AllUsers(ctx context.Context) (<-chan *User, <-chan error) {
+	userCh := make(chan *User, 1)
+	errorCh := make(chan error, 1)
+	go func() {
+		defer close(userCh)
+		defer close(errorCh)
+
+		cur, err := m.profiles.Find(ctx, bson.D{}, nil)
+		if err != nil {
+			errorCh <- err
+			return
+		}
+		defer cur.Close(context.Background())
+
+		for cur.Next(ctx) {
+			var u *User
+			if err := cur.Decode(&u); err != nil {
+				errorCh <- err
+				return
+			}
+			select {
+			case userCh <- u:
+			case <-ctx.Done():
+				errorCh <- ctx.Err()
+				return
+			}
+		}
+
+		if cur.Err() != nil {
+			errorCh <- cur.Err()
+		}
+	}()
+	return userCh, errorCh
 }
 
 func (m *mongoDatabase) PhotoExists(id string) (bool, error) {
