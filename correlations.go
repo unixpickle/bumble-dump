@@ -44,8 +44,9 @@ func WordCorrelations(ctx context.Context, db Database,
 		norm := math.Sqrt(float64(count)*math.Pow(1-mean, 2) +
 			float64(numUsers-count)*math.Pow(-mean, 2))
 		dotProduct := float64(cocount)*(1-mean)*(1-vMean) +
-			float64(count-cocount)*(1-mean)*(-vMean) +
-			float64(vCount-cocount)*(-mean)*(1-vMean)
+			float64(count-cocount)*(1-mean)*-vMean +
+			float64(vCount-cocount)*-mean*(1-vMean) +
+			float64(numUsers-count-vCount+cocount)*mean*vMean
 		correlations[word] = dotProduct / (norm * vNorm)
 	}
 
