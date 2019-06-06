@@ -36,8 +36,14 @@ func doOverSixFoot(db bumble.Database) {
 		func(u *bumble.User) bool {
 			for _, field := range u.ProfileFields {
 				if field.ID == "lifestyle_height" {
-					height := strings.Fields(strings.Split(field.DisplayValue, "(")[1])[0]
-					heightCm, _ := strconv.Atoi(height)
+					heightCm := 0
+					fields := strings.Fields(strings.Replace(field.DisplayValue, "(", "", -1))
+					for i, f := range fields[1:] {
+						if f == "cm" {
+							heightCm, _ = strconv.Atoi(fields[i])
+							break
+						}
+					}
 					return heightCm >= 183
 				}
 			}
