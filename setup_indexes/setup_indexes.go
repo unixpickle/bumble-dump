@@ -29,6 +29,10 @@ func main() {
 	log.Println("Creating indices...")
 	createUniqueID(db.Collection("profiles"))
 	createUniqueID(db.Collection("photos"))
+
+	log.Println("Creating location field...")
+	createLocationField(db.Collection("profiles"))
+	createLocationIndex(db.Collection("profiles"))
 }
 
 func removeDuplicates(coll *mongo.Collection) {
@@ -61,6 +65,36 @@ func createUniqueID(coll *mongo.Collection) {
 		Keys:    bson.D{{Key: "id", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	}, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func createLocationField(coll *mongo.Collection) {
+	res, err := coll.Find(context.Background(), bson.D{
+		{
+			Key:   "location",
+			Value: bson.D{{Key: "$exists", Value: true}},
+		},
+	}, nil)
+	essentials.Must(err)
+	for res.Next(context.Background()) {
+		var u bumble.User
+		if err := res.Decode(&u); err != nil {
+			log.Fatal(err)
+		}
+		u.SetLocation()
+		_, err := coll.ReplaceOne(context.Background(), bson.D{{Key: "id", Value: u.ID}}, &u, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func createLocationIndex(coll *mongo.Collection) {
+	_, err := coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys: bson.D{{Key: "location", Value: 1}},
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

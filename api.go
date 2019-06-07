@@ -62,6 +62,7 @@ type User struct {
 	ProfileFields []*ProfileField
 
 	ScanDate time.Time
+	Location string
 }
 
 func (u *User) AllPhotos() []*Photo {
@@ -74,13 +75,18 @@ func (u *User) AllPhotos() []*Photo {
 	return res
 }
 
-func (u *User) Location() string {
+// SetLocation sets the Location field based on the
+// ProfileFields. This should only be necessary for legacy
+// purposes, or when downloading new users and populating
+// their fields.
+func (u *User) SetLocation() {
+	u.Location = "Unknown"
 	for _, field := range u.ProfileFields {
 		if field.ID == "location" {
-			return strings.Split(field.DisplayValue, "\n")[0]
+			u.Location = strings.Split(field.DisplayValue, "\n")[0]
+			return
 		}
 	}
-	return "Unknown"
 }
 
 // BumbleAPI encapsulates all the required bumble calls to
@@ -230,6 +236,7 @@ func (b *BumbleAPI) GetEncounters() ([]*User, error) {
 					DisplayValue: rawProfileField.DisplayValue,
 				})
 			}
+			user.SetLocation()
 			users = append(users, &user)
 		}
 	}

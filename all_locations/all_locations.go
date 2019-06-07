@@ -17,7 +17,7 @@ func main() {
 	essentials.Must(err)
 	users, errCh := db.AllUsers(context.Background())
 	for u := range users {
-		locs[u.Location()]++
+		locs[u.Location]++
 	}
 	if err := <-errCh; err != nil {
 		essentials.Die(err)
