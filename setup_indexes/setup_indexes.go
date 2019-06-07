@@ -85,7 +85,7 @@ func createLocationField(coll *mongo.Collection) {
 			log.Fatal(err)
 		}
 		u.SetLocation()
-		_, err := coll.ReplaceOne(context.Background(), bson.D{{Key: "id", Value: u.ID}}, &u, nil)
+		_, err := coll.ReplaceOne(context.Background(), bson.D{{Key: "id", Value: u.ID}}, &u)
 		if err != nil {
 			log.Fatal(err)
 		}
