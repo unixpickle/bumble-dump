@@ -32,6 +32,7 @@ func main() {
 
 	log.Println("Creating location field...")
 	createLocationField(db.Collection("profiles"))
+	log.Println("Creating location index...")
 	createLocationIndex(db.Collection("profiles"))
 }
 
@@ -74,7 +75,7 @@ func createLocationField(coll *mongo.Collection) {
 	res, err := coll.Find(context.Background(), bson.D{
 		{
 			Key:   "location",
-			Value: bson.D{{Key: "$exists", Value: true}},
+			Value: bson.D{{Key: "$exists", Value: false}},
 		},
 	}, nil)
 	essentials.Must(err)
