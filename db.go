@@ -13,23 +13,34 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type Location struct {
+	Name string
+	Lat  float64
+	Lon  float64
+}
+
 // A Database is an abstract dating profile database.
 type Database interface {
 	AddUser(u *User) error
 	GetUser(userID string) (*User, error)
 	AllUsers(ctx context.Context) (<-chan *User, <-chan error)
+	AllUserLocations(ctx context.Context) ([]string, error)
 
 	PhotoExists(id string) (bool, error)
 	AddPhoto(photo *Photo, data []byte) error
 	GetPhoto(id string) (*Photo, []byte, error)
+
+	AddLocation(loc *Location) error
+	GetLocation(name string) (*Location, error)
 }
 
 type mongoDatabase struct {
-	config   *Config
-	client   *mongo.Client
-	db       *mongo.Database
-	photos   *mongo.Collection
-	profiles *mongo.Collection
+	config    *Config
+	client    *mongo.Client
+	db        *mongo.Database
+	photos    *mongo.Collection
+	profiles  *mongo.Collection
+	locations *mongo.Collection
 }
 
 func OpenDatabase(c *Config) (Database, error) {
@@ -41,11 +52,12 @@ func OpenDatabase(c *Config) (Database, error) {
 	}
 	db := client.Database("bumble")
 	return &mongoDatabase{
-		config:   c,
-		client:   client,
-		db:       db,
-		photos:   db.Collection("photos"),
-		profiles: db.Collection("profiles"),
+		config:    c,
+		client:    client,
+		db:        db,
+		photos:    db.Collection("photos"),
+		profiles:  db.Collection("profiles"),
+		locations: db.Collection("locations"),
 	}, nil
 }
 
@@ -102,6 +114,22 @@ func (m *mongoDatabase) AllUsers(ctx context.Context) (<-chan *User, <-chan erro
 	return userCh, errorCh
 }
 
+func (m *mongoDatabase) AllUserLocations(ctx context.Context) ([]string, error) {
+	locs, err := m.profiles.Distinct(ctx, "location", bson.D{})
+	if err != nil {
+		return nil, errors.Wrap(err, "all user locations")
+	}
+	var res []string
+	for _, loc := range locs {
+		s, ok := loc.(string)
+		if !ok {
+			return nil, errors.New("all user locations: unexpected data type")
+		}
+		res = append(res, s)
+	}
+	return res, nil
+}
+
 func (m *mongoDatabase) PhotoExists(id string) (bool, error) {
 	err := m.photos.FindOne(context.Background(), bson.D{{Key: "id", Value: id}}).Err()
 	if err == mongo.ErrNoDocuments {
@@ -152,4 +180,23 @@ func (m *mongoDatabase) GetPhoto(id string) (*Photo, []byte, error) {
 		return nil, nil, errors.Wrap(err, "get photo")
 	}
 	return &photo, data, nil
+}
+
+func (m *mongoDatabase) AddLocation(loc *Location) error {
+	err := m.locations.FindOneAndReplace(context.Background(),
+		bson.D{{Key: "name", Value: loc.Name}}, loc,
+		options.FindOneAndReplace().SetUpsert(true)).Err()
+	if err != nil {
+		return errors.Wrap(err, "add location")
+	}
+	return nil
+}
+
+func (m *mongoDatabase) GetLocation(name string) (*Location, error) {
+	var loc Location
+	res := m.locations.FindOne(context.Background(), bson.D{{Key: "name", Value: name}})
+	if err := res.Decode(&loc); err != nil {
+		return nil, errors.Wrap(err, "get location")
+	}
+	return &loc, nil
 }
