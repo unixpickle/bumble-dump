@@ -34,7 +34,6 @@ func main() {
 			log.Println("error:", err)
 			continue
 		}
-		fmt.Println(lat, lon)
 		essentials.Must(db.AddLocation(&bumble.Location{Name: loc, Lat: lat, Lon: lon}))
 	}
 }
