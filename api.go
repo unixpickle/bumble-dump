@@ -3,6 +3,7 @@ package bumble
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -71,6 +72,15 @@ func (u *User) AllPhotos() []*Photo {
 		}
 	}
 	return res
+}
+
+func (u *User) Location() string {
+	for _, field := range u.ProfileFields {
+		if field.ID == "location" {
+			return strings.Split(field.DisplayValue, "\n")[0]
+		}
+	}
+	return "Unknown"
 }
 
 // BumbleAPI encapsulates all the required bumble calls to
