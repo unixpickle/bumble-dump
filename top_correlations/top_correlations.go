@@ -15,10 +15,22 @@ func main() {
 	db, err := bumble.OpenDatabase(bumble.GetConfig())
 	essentials.Must(err)
 
+	doGender(db, "Male", 1)
+	doGender(db, "Female", 2)
 	doUnder24(db)
 	doOver40(db)
 	doOverSixFoot(db)
 	doZodiacSigns(db)
+}
+
+func doGender(db bumble.Database, genderStr string, genderNum int) {
+	fmt.Println("Gender = ", genderStr, "correlations:")
+	correlations, err := bumble.WordCorrelations(context.Background(), db,
+		func(u *bumble.User) bool {
+			return u.Gender == genderNum
+		})
+	essentials.Must(err)
+	printTopCorrelations(correlations)
 }
 
 func doUnder24(db bumble.Database) {
