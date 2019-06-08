@@ -24,7 +24,7 @@ func main() {
 }
 
 func doGender(db bumble.Database, genderStr string, genderNum int) {
-	fmt.Println("Gender = ", genderStr, "correlations:")
+	fmt.Println("Gender =", genderStr, "correlations:")
 	correlations, err := bumble.WordCorrelations(context.Background(), db,
 		func(u *bumble.User) bool {
 			return u.Gender == genderNum
