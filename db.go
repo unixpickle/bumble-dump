@@ -13,12 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Location struct {
-	Name string
-	Lat  float64
-	Lon  float64
-}
-
 // A Database is an abstract dating profile database.
 type Database interface {
 	AddUser(u *User) error
@@ -32,6 +26,8 @@ type Database interface {
 
 	AddLocation(loc *Location) error
 	GetLocation(name string) (*Location, error)
+	AllLocations(ctx context.Context) (<-chan *Location, <-chan error)
+	LocationsNear(ctx context.Context, lat, lon, maxDist float64) (<-chan *Location, <-chan error)
 }
 
 type mongoDatabase struct {
@@ -199,4 +195,58 @@ func (m *mongoDatabase) GetLocation(name string) (*Location, error) {
 		return nil, errors.Wrap(err, "get location")
 	}
 	return &loc, nil
+}
+
+func (m *mongoDatabase) AllLocations(ctx context.Context) (<-chan *Location, <-chan error) {
+	locCh := make(chan *Location, 1)
+	errorCh := make(chan error, 1)
+	go func() {
+		defer close(locCh)
+		defer close(errorCh)
+
+		cur, err := m.profiles.Find(ctx, bson.D{}, nil)
+		if err != nil {
+			errorCh <- err
+			return
+		}
+		defer cur.Close(context.Background())
+
+		for cur.Next(ctx) {
+			var l *Location
+			if err := cur.Decode(&l); err != nil {
+				errorCh <- err
+				return
+			}
+			select {
+			case locCh <- l:
+			case <-ctx.Done():
+				errorCh <- ctx.Err()
+				return
+			}
+		}
+
+		if cur.Err() != nil {
+			errorCh <- cur.Err()
+		}
+	}()
+	return locCh, errorCh
+}
+
+func (m *mongoDatabase) LocationsNear(ctx context.Context, lat, lon,
+	maxDist float64) (<-chan *Location, <-chan error) {
+	locCh := make(chan *Location, 1)
+	rawLocs, errCh := m.AllLocations(ctx)
+	go func() {
+		defer close(locCh)
+		for loc := range rawLocs {
+			if loc.Distance(lat, lon) <= maxDist {
+				select {
+				case locCh <- loc:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	return locCh, errCh
 }
