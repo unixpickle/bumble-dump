@@ -2,7 +2,10 @@ package bumble
 
 import "math"
 
-const earthRadius = 3958.8
+const (
+	earthRadius = 3958.8
+	degToRad    = math.Pi / 180
+)
 
 type Location struct {
 	Name string
@@ -20,8 +23,8 @@ func (l *Location) Distance(lat, lon float64) float64 {
 }
 
 func latLonToXYZ(lat, lon float64) (x, y, z float64) {
-	y = math.Sin(lat)
-	x = math.Sin(lon) * math.Cos(lat)
+	y = math.Sin(lat * degToRad)
+	x = math.Sin(lon*degToRad) * math.Cos(lat*degToRad)
 	z = math.Sqrt(1 - x*x - y*y)
 	return
 }
