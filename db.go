@@ -18,7 +18,9 @@ type Database interface {
 	AddUser(u *User) error
 	GetUser(userID string) (*User, error)
 	AllUsers(ctx context.Context) (<-chan *User, <-chan error)
+	UsersAt(ctx context.Context, location string) (<-chan *User, <-chan error)
 	AllUserLocations(ctx context.Context) ([]string, error)
+	UsersNear(ctx context.Context, lat, lon, maxDist float64) (<-chan *User, <-chan error)
 
 	PhotoExists(id string) (bool, error)
 	AddPhoto(photo *Photo, data []byte) error
@@ -75,16 +77,16 @@ func (m *mongoDatabase) GetUser(userID string) (*User, error) {
 	return &user, nil
 }
 
-func (m *mongoDatabase) AllUsers(ctx context.Context) (<-chan *User, <-chan error) {
+func (m *mongoDatabase) users(ctx context.Context, query interface{}) (<-chan *User, <-chan error) {
 	userCh := make(chan *User, 1)
-	errorCh := make(chan error, 1)
+	errCh := make(chan error, 1)
 	go func() {
 		defer close(userCh)
-		defer close(errorCh)
+		defer close(errCh)
 
-		cur, err := m.profiles.Find(ctx, bson.D{}, nil)
+		cur, err := m.profiles.Find(ctx, query, nil)
 		if err != nil {
-			errorCh <- err
+			errCh <- err
 			return
 		}
 		defer cur.Close(context.Background())
@@ -92,22 +94,30 @@ func (m *mongoDatabase) AllUsers(ctx context.Context) (<-chan *User, <-chan erro
 		for cur.Next(ctx) {
 			var u *User
 			if err := cur.Decode(&u); err != nil {
-				errorCh <- err
+				errCh <- err
 				return
 			}
 			select {
 			case userCh <- u:
 			case <-ctx.Done():
-				errorCh <- ctx.Err()
+				errCh <- ctx.Err()
 				return
 			}
 		}
 
 		if cur.Err() != nil {
-			errorCh <- cur.Err()
+			errCh <- cur.Err()
 		}
 	}()
-	return userCh, errorCh
+	return userCh, errCh
+}
+
+func (m *mongoDatabase) AllUsers(ctx context.Context) (<-chan *User, <-chan error) {
+	return m.users(ctx, bson.D{})
+}
+
+func (m *mongoDatabase) UsersAt(ctx context.Context, location string) (<-chan *User, <-chan error) {
+	return m.users(ctx, bson.D{{Key: "location", Value: location}})
 }
 
 func (m *mongoDatabase) AllUserLocations(ctx context.Context) ([]string, error) {
@@ -124,6 +134,39 @@ func (m *mongoDatabase) AllUserLocations(ctx context.Context) ([]string, error) 
 		res = append(res, s)
 	}
 	return res, nil
+}
+
+func (m *mongoDatabase) UsersNear(ctx context.Context, lat, lon,
+	maxDist float64) (<-chan *User, <-chan error) {
+	userCh := make(chan *User, 1)
+	errCh := make(chan error, 1)
+
+	go func() {
+		defer close(userCh)
+		defer close(errCh)
+
+		locations, locErrCh := m.LocationsNear(ctx, lat, lon, maxDist)
+		for loc := range locations {
+			users, userErrCh := m.UsersAt(ctx, loc.Name)
+			for user := range users {
+				select {
+				case userCh <- user:
+				case <-ctx.Done():
+					errCh <- errors.Wrap(ctx.Err(), "get users near")
+					return
+				}
+			}
+			if err := <-userErrCh; err != nil {
+				errCh <- errors.Wrap(err, "get users near")
+				return
+			}
+		}
+		if err := <-locErrCh; err != nil {
+			errCh <- errors.Wrap(err, "get users near")
+		}
+	}()
+
+	return userCh, errCh
 }
 
 func (m *mongoDatabase) PhotoExists(id string) (bool, error) {
@@ -199,14 +242,14 @@ func (m *mongoDatabase) GetLocation(name string) (*Location, error) {
 
 func (m *mongoDatabase) AllLocations(ctx context.Context) (<-chan *Location, <-chan error) {
 	locCh := make(chan *Location, 1)
-	errorCh := make(chan error, 1)
+	errCh := make(chan error, 1)
 	go func() {
 		defer close(locCh)
-		defer close(errorCh)
+		defer close(errCh)
 
 		cur, err := m.profiles.Find(ctx, bson.D{}, nil)
 		if err != nil {
-			errorCh <- err
+			errCh <- err
 			return
 		}
 		defer cur.Close(context.Background())
@@ -214,22 +257,22 @@ func (m *mongoDatabase) AllLocations(ctx context.Context) (<-chan *Location, <-c
 		for cur.Next(ctx) {
 			var l *Location
 			if err := cur.Decode(&l); err != nil {
-				errorCh <- err
+				errCh <- err
 				return
 			}
 			select {
 			case locCh <- l:
 			case <-ctx.Done():
-				errorCh <- ctx.Err()
+				errCh <- ctx.Err()
 				return
 			}
 		}
 
 		if cur.Err() != nil {
-			errorCh <- cur.Err()
+			errCh <- cur.Err()
 		}
 	}()
-	return locCh, errorCh
+	return locCh, errCh
 }
 
 func (m *mongoDatabase) LocationsNear(ctx context.Context, lat, lon,
