@@ -28,43 +28,49 @@ func main() {
 			continue
 		}
 		log.Println("looking up:", loc)
-		lat, lon, err := lookupLocation(loc)
+		loc, err := lookupLocation(loc)
 		if err != nil {
 			log.Println("error:", err)
 			continue
 		}
-		essentials.Must(db.AddLocation(&bumble.Location{Name: loc, Lat: lat, Lon: lon}))
+		essentials.Must(db.AddLocation(loc))
 	}
 }
 
-func lookupLocation(name string) (lat, lon float64, err error) {
+func lookupLocation(name string) (*bumble.Location, error) {
 	dataStr := "address=" + url.QueryEscape(name)
 	body := bytes.NewReader([]byte(dataStr))
 	req, err := http.NewRequest("POST", "https://www.mapdevelopers.com/data.php?operation=geocode",
 		body)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	req.Header.Set("Referer", "https://www.mapdevelopers.com/geocode_tool.php")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 
 	var obj struct {
 		Data struct {
-			Lat float64 `json:"lat"`
-			Lon float64 `json:"lng"`
+			Lat         float64 `json:"lat"`
+			Lon         float64 `json:"lng"`
+			CountryCode string  `json:"country_code"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(data, &obj); err != nil {
-		return 0, 0, err
+		return nil, err
 	}
-	return obj.Data.Lat, obj.Data.Lon, nil
+	return &bumble.Location{
+		Name:        name,
+		Lat:         obj.Data.Lat,
+		Lon:         obj.Data.Lon,
+		CountryCode: obj.Data.CountryCode,
+	}, nil
 }

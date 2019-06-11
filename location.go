@@ -8,9 +8,10 @@ const (
 )
 
 type Location struct {
-	Name string
-	Lat  float64
-	Lon  float64
+	Name        string
+	Lat         float64
+	Lon         float64
+	CountryCode string
 }
 
 // Distance returns the distance (in miles) between two
