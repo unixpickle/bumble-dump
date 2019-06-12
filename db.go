@@ -247,7 +247,7 @@ func (m *mongoDatabase) AllLocations(ctx context.Context) (<-chan *Location, <-c
 		defer close(locCh)
 		defer close(errCh)
 
-		cur, err := m.profiles.Find(ctx, bson.D{}, nil)
+		cur, err := m.locations.Find(ctx, bson.D{}, nil)
 		if err != nil {
 			errCh <- err
 			return
