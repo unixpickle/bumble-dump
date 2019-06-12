@@ -15,12 +15,31 @@ func main() {
 	db, err := bumble.OpenDatabase(bumble.GetConfig())
 	essentials.Must(err)
 
+	doCountry(db, "us")
 	doGender(db, "Male", 1)
 	doGender(db, "Female", 2)
 	doUnder24(db)
 	doOver40(db)
 	doOverSixFoot(db)
 	doZodiacSigns(db)
+}
+
+func doCountry(db bumble.Database, countryCode string) {
+	fmt.Println("Country =", countryCode, "correlations:")
+	countryLocs := map[string]bool{}
+	locs, errCh := db.AllLocations(context.Background())
+	for loc := range locs {
+		if loc.CountryCode == countryCode {
+			countryLocs[loc.Name] = true
+		}
+	}
+	essentials.Must(<-errCh)
+	correlations, err := bumble.WordCorrelations(context.Background(), db,
+		func(u *bumble.User) bool {
+			return countryLocs[u.Location]
+		})
+	essentials.Must(err)
+	printTopCorrelations(correlations)
 }
 
 func doGender(db bumble.Database, genderStr string, genderNum int) {
