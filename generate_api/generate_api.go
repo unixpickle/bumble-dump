@@ -4,10 +4,14 @@
 //
 // The requests in the HAR data are converted into a
 // reusable API for the Bumble service.
+//
+// HAR is fed to standard input, and an encoded API is fed
+// to standard output.
 package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 
@@ -69,8 +73,18 @@ func main() {
 		}
 	}
 	if !foundLoc || !foundGetEnc || !foundDislike {
-		essentials.Die("missing a request (did you remember to swipe someone?)",
-			foundLoc, foundGetEnc, foundDislike)
+		if !foundLoc {
+			fmt.Fprintln(os.Stderr, "Missing location update request. Try updating your")
+			fmt.Fprintln(os.Stderr, "location in settings and allowing your browser to")
+			fmt.Fprintln(os.Stderr, "provide your location to the website.")
+		}
+		if !foundGetEnc {
+			fmt.Fprintln(os.Stderr, "Missing encounters request.")
+		}
+		if !foundDislike {
+			fmt.Fprintln(os.Stderr, "Missing dislike request. Make sure to swipe someone.")
+		}
+		essentials.Die("Cannot generate API due to missing request.")
 	}
 
 	json.NewEncoder(os.Stdout).Encode(api)
