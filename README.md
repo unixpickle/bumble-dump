@@ -26,3 +26,13 @@ Simply run the `scan` command and pipe it into `scan_dump`:
 ```
 go run scan/*.go | go run scan_dump/*.go
 ```
+
+## Finding geocoordinates
+
+The `scan` command dumps raw user profiles, and a user profile doesn't come with an exact set of geocoordinates. Instead, it comes with a string such as `Philadelphia, PA`.
+
+The `find_locations` command populates a collection in the database mapping location strings to geocoordinates. Once the location collection is populated, you can use the database to search for users within a certain distance of a given location.
+
+## Indexes
+
+At some point, you may want to setup indexes on the database so that users can be found faster. This can be done with the `setup_indexes` command.
