@@ -129,8 +129,3 @@ func printTopCorrelations(m map[string]float64, ignore ...string) {
 	}
 	fmt.Println()
 }
-
-type correlationPair struct {
-	Word string
-	Corr float64
-}
